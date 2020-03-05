@@ -120,9 +120,11 @@ class App extends Component {
 
     legChart.legend = new am4charts.Legend();
     legChart.cursor = new am4charts.XYCursor();
-    legChart.cursor.maxTooltipDistance = 0;
+  
 
     leg1.tooltipText = "{valueX}: [bold]{valueY}[/]";
+
+    legChart.scrollbarX = new am4core.Scrollbar();
 
     this.legChart = legChart;
 
@@ -132,7 +134,7 @@ class App extends Component {
 
     raceCalc.push({distanceToElevation: calculateMapPoints(raceData)});
 
-    console.log(raceCalc);
+    console.log(JSON.stringify(raceCalc));
 
 
     //ragnarChart.data = legData
@@ -145,16 +147,111 @@ class App extends Component {
     ragnarData.dataFields.valueX = "distance"
     ragnarData.dataFields.valueY = "elevation"
     ragnarData.strokeWidth = 1
-    ragnarData.tooltipText = "{valueX.value}"
     ragnarData.stroke = am4core.color("#ddaa00")
-    ragnarData.data = raceCalc[0]['distanceToElevation'];
+    // ragnarData.tooltipText = "hello"
+    // ragnarData.showTooltipOn = "always" 
+    
+    ragnarChart.data = raceCalc[0]['distanceToElevation'];
 
     let scrollbarX = new am4charts.XYChartScrollbar();
     scrollbarX.series.push(ragnarData);
     ragnarChart.scrollbarX = scrollbarX;
 
     ragnarChart.cursor = new am4charts.XYCursor();
-    ragnarData.tooltipText = "{valueX}: [bold]{valueY}[/]";
+    ragnarChart.cursor.lineY.disabled = true
+    // ragnarChart.cursor.snapToSeries = ragnarData
+
+    // Create Custom Tool Tip
+    let customToolTip = ragnarChart.createChild(am4core.Tooltip);
+    customToolTip.fontSize = 14;
+    customToolTip.autoTextColor = false;
+    customToolTip.label.fill = am4core.color("#000");
+    customToolTip.background.fill = am4core.color("#ddaa00");
+    customToolTip.pointerOrientation = "horizontal";
+
+    ragnarChart.plotContainer.events.on("out", function(ev) {
+        customToolTip.hide();
+    });
+
+    ragnarChart.plotContainer.events.on("over", function(ev) {
+        //customToolTip.appear();
+        customToolTip.show();
+    });
+
+    var last_idx = -1;
+
+    ragnarChart.cursor.events.on("cursorpositionchanged", function(ev) {
+      // get cursor x coordinate
+      let xAxis = ev.target.chart.xAxes.getIndex(0);
+      let yAxis = ev.target.chart.yAxes.getIndex(0);
+      
+      let x = xAxis.positionToValue(xAxis.toAxisPosition(ev.target.xPosition));
+      
+      // search closest data point
+      let idx = searchval(x);
+      
+      // tooltip update only after data point change
+      if(idx !== last_idx) {
+        // data point coordinates
+        let xpos = xAxis.valueToPoint(ragnarChart.data[idx].distance);
+        let ypos = yAxis.valueToPoint(ragnarChart.data[idx].elevation);
+        // plot container offset
+        let xOffset = ragnarChart.plotContainer.pixelX;
+        let yOffset = ragnarChart.plotContainer.pixelY + 80;
+        
+        let txt = round(ragnarChart.data[idx].elevation, 2) + " Feet\n" + round(ragnarChart.data[idx].distance, 2) + " Miles";
+        //txt = txt  + "\nxpos: "+ xpos.x + "\nypos: "+ypos.y + "\nxOff: " + xOffset;
+        //console.log(txt);
+
+        // set content and move to data point
+        customToolTip.text = txt;
+        customToolTip.pointTo({"x": xpos.x + xOffset, "y": ypos.y + yOffset});
+        
+        last_idx = idx;
+      }
+    });
+
+    function searchval(x) {
+        let center;
+        let left = 0;
+        let maxidx = ragnarChart.data.length - 1;
+        let right = maxidx;
+        
+        // bisect data array 
+        // worst-case performance: O(log2(n))
+        while (left < right) {  
+            center = Math.floor((left + right) / 2);
+
+            if(ragnarChart.data[center].distance < x) {
+                left = center + 1;
+            }
+            else {
+                right = center;
+            }   
+        }
+        
+        // check which data point is closer to the cursor
+        if(x > ragnarChart.data[center].distance) {
+            if((center < maxidx) && (x - ragnarChart.data[center].distance) > (ragnarChart.data[center + 1].distance - x)) {
+                center = center + 1;
+            }
+        }   
+
+        if(x < ragnarChart.data[center].distance) {
+            if((center > 0) && (ragnarChart.data[center].distance - x) > (x - ragnarChart.data[center - 1].distance)) {
+                center = center - 1;
+            }
+        }
+        
+        return center;
+    }
+
+    function round(value, precision) {
+        var multiplier = Math.pow(10, precision || 0);
+        return Math.round(value * multiplier) / multiplier;
+    }
+
+    
 
     this.ragnarChart = ragnarChart;
 
