@@ -147,7 +147,7 @@ class App extends Component {
     ragnarData.dataFields.valueX = "distance"
     ragnarData.dataFields.valueY = "elevation"
     ragnarData.strokeWidth = 1
-    ragnarData.stroke = am4core.color("#ddaa00")
+    ragnarData.stroke = am4core.color("#ffaa00")
     // ragnarData.tooltipText = "hello"
     // ragnarData.showTooltipOn = "always" 
     
@@ -159,6 +159,8 @@ class App extends Component {
 
     ragnarChart.cursor = new am4charts.XYCursor();
     ragnarChart.cursor.lineY.disabled = true
+    ragnarChart.cursor.lineX.strokeDasharray= "";
+    
     // ragnarChart.cursor.snapToSeries = ragnarData
 
     // Create Custom Tool Tip
@@ -166,7 +168,8 @@ class App extends Component {
     customToolTip.fontSize = 14;
     customToolTip.autoTextColor = false;
     customToolTip.label.fill = am4core.color("#000");
-    customToolTip.background.fill = am4core.color("#ddaa00");
+    customToolTip.background.fill = am4core.color("#ffaa00");
+    customToolTip.background.opacity = ".4"
     customToolTip.pointerOrientation = "horizontal";
 
     ragnarChart.plotContainer.events.on("out", function(ev) {
@@ -206,6 +209,7 @@ class App extends Component {
         // set content and move to data point
         customToolTip.text = txt;
         customToolTip.pointTo({"x": xpos.x + xOffset, "y": ypos.y + yOffset});
+        customToolTip.pointerOrientation = "left"
         
         last_idx = idx;
       }
@@ -250,8 +254,6 @@ class App extends Component {
         var multiplier = Math.pow(10, precision || 0);
         return Math.round(value * multiplier) / multiplier;
     }
-
-    
 
     this.ragnarChart = ragnarChart;
 
