@@ -32,10 +32,20 @@ export const calculateMapPoints = points => {
         prevLat = data.lat
         prevLon = data.lon
         var elevation = data.ele
-        var toFeet = parseFloat(elevation) * 39.37 /12
+		var toFeet = parseFloat(elevation) * 39.37 /12
+		if(data.runner_number) {
+			return({leg_number: data.leg_number, runner_number: data.runner_number, distance, elevation: toFeet})
+		}
         return ({distance, elevation: toFeet})
         
     })
     
     return calculatedMapPoints
+}
+
+export const getLatLon = points => {
+	let latLonPoints = points.map(data => {
+		return ({lat: data.lat, lng: data.lon})
+	})
+	return latLonPoints
 }

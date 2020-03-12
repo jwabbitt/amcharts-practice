@@ -5,7 +5,7 @@ import * as am4charts from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 
 import wasatchback from './assets/wasatchback'
-import { calculateMapPoints } from './helpers/legElevations'
+import { calculateMapPoints, getLatLon } from './helpers/legElevations'
 
 am4core.useTheme(am4themes_animated);
 
@@ -16,18 +16,31 @@ class App extends Component {
     let legData = []
     let raceData = []
     let raceCalc = []
+    let latLon = []
+    let data =[]
+    let race = []
 
     let legs = wasatchback.data.legs;
     legs.forEach(leg => {
       let points = leg.points;
 
+      
+      let leg_number = leg.leg_number;
+      let runner_number = leg.leg_number % 12
+      runner_number === 0 ? runner_number = 12 : runner_number = runner_number + 0
+
       leg.points.forEach(point => {
         raceData.push(point);
       })
-
-      let leg_number = leg.leg_number;
+      leg.points.forEach(point => {
+        data.push({leg_number: leg_number, runner_number, lat: point.lat, lon: point.lon, ele: point.ele});
+      })
       legData.push({leg_number, distanceToElevation: calculateMapPoints(points)})
+      latLon.push({leg_number, latLonPoints: getLatLon(points)})
     });
+
+    // console.log(raceData)
+    // console.log(data)
 
 
     //legChart.data = legData
@@ -96,15 +109,18 @@ class App extends Component {
     legChart.scrollbarX = new am4core.Scrollbar();
 
     this.legChart = legChart;
-    console.log(legData)
+    // console.log(legData)
 
 
     // Ragnar Race Chart
     let ragnarChart = am4core.create("ragnardiv", am4charts.XYChart);
 
     raceCalc.push({distanceToElevation: calculateMapPoints(raceData)});
+    race.push({distanceToElevation: calculateMapPoints(data)})
+    
+    console.log(race);
 
-    console.log(JSON.stringify(raceCalc));
+    //console.log(JSON.stringify(raceCalc));
 
 
     //ragnarChart.data = legData
@@ -224,6 +240,23 @@ class App extends Component {
         var multiplier = Math.pow(10, precision || 0);
         return Math.round(value * multiplier) / multiplier;
     }
+
+    let runnerColors = ['#4285f4', '#db4437', '#f4b400', '#0f9d58', '#ff6d00', '#46bdc6']
+
+    // let runnerData = []
+    // legData.forEach( leg => {
+    //   let ragnarLeg = ragnarChart.series.push(new am4charts.LineSeries());
+    //   ragnarLeg.dataFields.valueX = "distance"
+    //   ragnarLeg.dataFields.valueY = "elevation"
+    //   ragnarLeg.strokeWidth = strokeWidth
+    //   ragnarLeg.name = "Runner " + leg.runner_number
+    //   ragnarLeg.tooltipText = "{valueX.value}"
+    //   ragnarLeg.stroke = am4core.color(runnerColors[leg.runner_number - 1])
+    //   ragnarLeg.data = legData[0]['distanceToElevation']
+
+    // })
+
+    ragnarChart.legend = new am4charts.Legend();
 
     this.ragnarChart = ragnarChart;
 
