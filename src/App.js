@@ -11,119 +11,92 @@ am4core.useTheme(am4themes_animated);
 
 class App extends Component {
   componentDidMount() {
-    // Legs Chart
-    let legChart = am4core.create("legdiv", am4charts.XYChart);
-    let legData = []
-    let raceData = []
-    let raceCalc = []
-    let latLon = []
-    let data =[]
+    let runnerColors = ['#4285f4', '#db4437', '#f4b400', '#0f9d58', '#ff6d00', '#46bdc6',
+                        '#ff00ff', '#9955ff', '#0000ff', '#00ffff', '#980000', '#00ff00']
+
+    let strokeWidth = 3;
+
+    let fullRace =[]
     let race = []
+    let legData = []
+    let latLon = []
 
     let legs = wasatchback.data.legs;
     legs.forEach(leg => {
       let points = leg.points;
-
       
       let leg_number = leg.leg_number;
       let runner_number = leg.leg_number % 12
       runner_number === 0 ? runner_number = 12 : runner_number = runner_number + 0
 
+      // For Full Race Chart
       leg.points.forEach(point => {
-        raceData.push(point);
+        fullRace.push({leg_number: leg_number, runner_number, lat: point.lat, lon: point.lon, ele: point.ele});
       })
-      leg.points.forEach(point => {
-        data.push({leg_number: leg_number, runner_number, lat: point.lat, lon: point.lon, ele: point.ele});
-      })
+
+      // For Leg Charts
       legData.push({leg_number, distanceToElevation: calculateMapPoints(points)})
+
+      // For Google Maps API
       latLon.push({leg_number, latLonPoints: getLatLon(points)})
     });
 
-    // console.log(raceData)
-    // console.log(data)
 
+    // ------------ LEGS CHART --------------
+    let legChart = am4core.create("legdiv", am4charts.XYChart);
 
-    //legChart.data = legData
+    let legChartTitle = legChart.titles.create();
+    legChartTitle.text = "Van 1 - 1st Session";
+    legChartTitle.fontSize = 25;
+    legChartTitle.marginBottom = 30;
+    legChartTitle.align = "left"
+
     let distanceAxis = legChart.xAxes.push(new am4charts.ValueAxis());
     distanceAxis.title.text = "Distance (Miles)"
     let elevationAxis = legChart.yAxes.push(new am4charts.ValueAxis());
     elevationAxis.title.text = "Elevation (Feet)"
 
-    let strokeWidth = 3;
+    let createLegSeries = (seriesData, name, color) => {
+      console.log("seriesDataString: " + seriesData)
+      let legSeries = legChart.series.push(new am4charts.LineSeries());
+      legSeries.dataFields.valueX = "distance"
+      legSeries.dataFields.valueY = "elevation"
+      legSeries.strokeWidth = strokeWidth
+      legSeries.name = name
+      legSeries.tooltipText = "{valueX.value}"
+      legSeries.stroke = am4core.color(color)
+      legSeries.connect = false
+      legSeries.data = seriesData
 
-    let leg1 = legChart.series.push(new am4charts.LineSeries());
-    leg1.dataFields.valueX = "distance"
-    leg1.dataFields.valueY = "elevation"
-    leg1.strokeWidth = strokeWidth
-    leg1.name = "Leg 1"
-    leg1.tooltipText = "{valueX.value}"
-    leg1.stroke = am4core.color("#4285f4")
-    leg1.data = legData[0]['distanceToElevation']
+      return createLegSeries
+    }
 
-    let leg2 = legChart.series.push(new am4charts.LineSeries());
-    leg2.dataFields.valueX = "distance"
-    leg2.dataFields.valueY = "elevation"
-    leg2.strokeWidth = strokeWidth
-    leg2.name = "Leg 2"
-    leg2.stroke = am4core.color("#db4437")
-    leg2.data = legData[1]['distanceToElevation']
-
-    let leg3 = legChart.series.push(new am4charts.LineSeries());
-    leg3.dataFields.valueX = "distance"
-    leg3.dataFields.valueY = "elevation"
-    leg3.strokeWidth = strokeWidth
-    leg3.name = "Leg 3"
-    leg3.stroke = am4core.color("#f4b400")
-    leg3.data = legData[2]['distanceToElevation']
-
-    let leg4 = legChart.series.push(new am4charts.LineSeries());
-    leg4.dataFields.valueX = "distance"
-    leg4.dataFields.valueY = "elevation"
-    leg4.strokeWidth = strokeWidth
-    leg4.name = "Leg 4"
-    leg4.stroke = am4core.color("#0f9d58")
-    leg4.data = legData[3]['distanceToElevation']
-
-    let leg5 = legChart.series.push(new am4charts.LineSeries());
-    leg5.dataFields.valueX = "distance"
-    leg5.dataFields.valueY = "elevation"
-    leg5.strokeWidth = strokeWidth
-    leg5.name = "Leg 5"
-    leg5.stroke = am4core.color("#ff6d00")
-    leg5.data = legData[4]['distanceToElevation']
-
-    let leg6 = legChart.series.push(new am4charts.LineSeries());
-    leg6.dataFields.valueX = "distance"
-    leg6.dataFields.valueY = "elevation"
-    leg6.strokeWidth = strokeWidth
-    leg6.name = "Leg 6"
-    leg6.stroke = am4core.color("#46bdc6")
-    leg6.data = legData[5]['distanceToElevation']
+    for (let i = 0; i < 6; i++) {
+      let name = "Leg " + (i + 1)
+      createLegSeries(legData[i]['distanceToElevation'], name, runnerColors[i])
+    }
 
     legChart.legend = new am4charts.Legend();
     legChart.cursor = new am4charts.XYCursor();
-  
-
-    leg1.tooltipText = "{valueX}: [bold]{valueY}[/]";
 
     legChart.scrollbarX = new am4core.Scrollbar();
 
     this.legChart = legChart;
-    // console.log(legData)
 
 
-    // Ragnar Race Chart
+    // ----------- RAGNAR RACE CHART -------------
     let ragnarChart = am4core.create("ragnardiv", am4charts.XYChart);
 
-    raceCalc.push({distanceToElevation: calculateMapPoints(raceData)});
-    race.push({distanceToElevation: calculateMapPoints(data)})
+    race.push(calculateMapPoints(fullRace))
     
-    console.log(race);
+    console.log(race[0]);
 
-    //console.log(JSON.stringify(raceCalc));
+    let ragnarChartTitle = ragnarChart.titles.create();
+    ragnarChartTitle.text = "Wasatch Back Full Race";
+    ragnarChartTitle.fontSize = 25;
+    ragnarChartTitle.marginBottom = 30;
+    ragnarChartTitle.align = "left";
 
-
-    //ragnarChart.data = legData
     let raceDistanceAxis = ragnarChart.xAxes.push(new am4charts.ValueAxis());
     raceDistanceAxis.title.text = "Distance (Miles)";
     let raceElevationAxis = ragnarChart.yAxes.push(new am4charts.ValueAxis());
@@ -133,11 +106,11 @@ class App extends Component {
     ragnarData.dataFields.valueX = "distance"
     ragnarData.dataFields.valueY = "elevation"
     ragnarData.strokeWidth = strokeWidth
-    ragnarData.stroke = am4core.color("#ffaa00")
-    // ragnarData.tooltipText = "hello"
-    // ragnarData.showTooltipOn = "always" 
+    ragnarData.name = "Full Race"
+    ragnarData.stroke = am4core.color("#ddd")
+    ragnarData.data = race[0];
     
-    ragnarChart.data = raceCalc[0]['distanceToElevation'];
+    ragnarChart.data = race[0];
 
     let scrollbarX = new am4charts.XYChartScrollbar();
     scrollbarX.series.push(ragnarData);
@@ -146,15 +119,13 @@ class App extends Component {
     ragnarChart.cursor = new am4charts.XYCursor();
     ragnarChart.cursor.lineY.disabled = true
     ragnarChart.cursor.lineX.strokeDasharray= "";
-    
-    // ragnarChart.cursor.snapToSeries = ragnarData
 
     // Create Custom Tool Tip
     let customToolTip = ragnarChart.createChild(am4core.Tooltip);
     customToolTip.fontSize = 14;
     customToolTip.autoTextColor = false;
     customToolTip.label.fill = am4core.color("#000");
-    customToolTip.background.fill = am4core.color("#ffaa00");
+    customToolTip.background.fill = am4core.color("#ddd");
     customToolTip.background.opacity = ".8"
     customToolTip.pointerOrientation = "horizontal";
 
@@ -186,7 +157,7 @@ class App extends Component {
         let ypos = yAxis.valueToPoint(ragnarChart.data[idx].elevation);
         // plot container offset
         let xOffset = ragnarChart.plotContainer.pixelX;
-        let yOffset = ragnarChart.plotContainer.pixelY + 80;
+        let yOffset = ragnarChart.plotContainer.pixelY + 140;
         
         let txt = round(ragnarChart.data[idx].elevation, 2) + " Feet\n" + round(ragnarChart.data[idx].distance, 2) + " Miles";
         //txt = txt  + "\nxpos: "+ xpos.x + "\nypos: "+ypos.y + "\nxOff: " + xOffset;
@@ -241,20 +212,35 @@ class App extends Component {
         return Math.round(value * multiplier) / multiplier;
     }
 
-    let runnerColors = ['#4285f4', '#db4437', '#f4b400', '#0f9d58', '#ff6d00', '#46bdc6']
+    let createRagnarSeries = (seriesData, name, color) => {
+      console.log("seriesDataString: " + seriesData)
+      let ragnarSeries = ragnarChart.series.push(new am4charts.LineSeries());
+      ragnarSeries.dataFields.valueX = "distance"
+      ragnarSeries.dataFields.valueY = "elevation"
+      ragnarSeries.strokeWidth = strokeWidth
+      ragnarSeries.name = name
+      ragnarSeries.tooltipText = "{valueX.value}"
+      ragnarSeries.stroke = am4core.color(color)
+      ragnarSeries.connect = false
+      ragnarSeries.data = seriesData
 
-    // let runnerData = []
-    // legData.forEach( leg => {
-    //   let ragnarLeg = ragnarChart.series.push(new am4charts.LineSeries());
-    //   ragnarLeg.dataFields.valueX = "distance"
-    //   ragnarLeg.dataFields.valueY = "elevation"
-    //   ragnarLeg.strokeWidth = strokeWidth
-    //   ragnarLeg.name = "Runner " + leg.runner_number
-    //   ragnarLeg.tooltipText = "{valueX.value}"
-    //   ragnarLeg.stroke = am4core.color(runnerColors[leg.runner_number - 1])
-    //   ragnarLeg.data = legData[0]['distanceToElevation']
+      return ragnarSeries
+    }
 
-    // })
+    for (let i=0; i < 12; i++) {
+      let runnerData = []
+      race[0].map(data => {
+        if (data.runner_number === i + 1) {
+          runnerData.push({distance: data.distance, elevation: data.elevation})
+        } else {
+          runnerData.push({})
+        }
+        return runnerData
+      })
+      let nameString = "Runner " + (i+1)
+      let colorString = runnerColors[i]
+      createRagnarSeries(runnerData, nameString, colorString)
+    }
 
     ragnarChart.legend = new am4charts.Legend();
 
@@ -271,7 +257,6 @@ class App extends Component {
   render() {
     return (
       <div>
-        {/* <div id="chartdiv" style={{ width: "100%", height: "500px" }}></div> */}
         <div id="legdiv" style={{ width: "100%", height: "500px" }}></div>
         <div id="ragnardiv" style={{ width: "100%", height: "500px" }}></div>
       </div>
