@@ -42,59 +42,74 @@ class App extends Component {
     });
 
 
-    // ------------ LEGS CHART --------------
-    let legChart = am4core.create("legdiv", am4charts.XYChart);
+    // ------------ LEGS CHARTS --------------
+    let createLegChart = (chartDiv, chartTitle, chartDataSeriesStart) => {
 
-    let legChartTitle = legChart.titles.create();
-    legChartTitle.text = "Van 1 - 1st Session";
-    legChartTitle.fontSize = 25;
-    legChartTitle.marginBottom = 30;
-    legChartTitle.align = "left"
-
-    let distanceAxis = legChart.xAxes.push(new am4charts.ValueAxis());
-    distanceAxis.title.text = "Distance (Miles)"
-    let elevationAxis = legChart.yAxes.push(new am4charts.ValueAxis());
-    elevationAxis.title.text = "Elevation (Feet)"
-
-    let createLegSeries = (seriesData, name, color) => {
-      console.log("seriesDataString: " + seriesData)
-      let legSeries = legChart.series.push(new am4charts.LineSeries());
-      legSeries.dataFields.valueX = "distance"
-      legSeries.dataFields.valueY = "elevation"
-      legSeries.strokeWidth = strokeWidth
-      legSeries.name = name
-      legSeries.tooltipText = "{valueX.value}"
-      legSeries.stroke = am4core.color(color)
-      legSeries.connect = false
-      legSeries.data = seriesData
-
-      return createLegSeries
+      let legChart = am4core.create(chartDiv, am4charts.XYChart);
+  
+      let legChartTitle = legChart.titles.create();
+      legChartTitle.text = chartTitle;
+      legChartTitle.fontSize = 25;
+      legChartTitle.marginTop = 20
+      legChartTitle.marginBottom = 10;
+      legChartTitle.align = "left"
+  
+      let distanceAxis = legChart.xAxes.push(new am4charts.ValueAxis());
+      distanceAxis.title.text = "Distance (Miles)"
+      distanceAxis.max = 10
+      let elevationAxis = legChart.yAxes.push(new am4charts.ValueAxis());
+      elevationAxis.title.text = "Elevation (Feet)"
+      elevationAxis.min = 4500
+      elevationAxis.max = 7000
+  
+      let createLegSeries = (seriesData, name, color) => {
+        let legSeries = legChart.series.push(new am4charts.LineSeries());
+        legSeries.dataFields.valueX = "distance"
+        legSeries.dataFields.valueY = "elevation"
+        legSeries.strokeWidth = strokeWidth
+        legSeries.name = name
+        legSeries.tooltipText = "{valueX.value}"
+        legSeries.stroke = am4core.color(color)
+        legSeries.connect = false
+        legSeries.data = seriesData
+  
+        return createLegSeries
+      }
+  
+      for (let i = chartDataSeriesStart; i < chartDataSeriesStart + 6; i++) {
+        let name = "Leg " + (i + 1)
+        let runnerColor = i % 12
+        runnerColor === 12 ? runnerColor = 0 : runnerColor = runnerColor + 0
+        console.log("Runner Color: " + runnerColor)
+        createLegSeries(legData[i]['distanceToElevation'], name, runnerColors[runnerColor])
+      }
+  
+      legChart.legend = new am4charts.Legend();
+      legChart.cursor = new am4charts.XYCursor();
+  
+      legChart.scrollbarX = new am4core.Scrollbar();
+  
+      this.legChart = legChart;
     }
 
-    for (let i = 0; i < 6; i++) {
-      let name = "Leg " + (i + 1)
-      createLegSeries(legData[i]['distanceToElevation'], name, runnerColors[i])
-    }
-
-    legChart.legend = new am4charts.Legend();
-    legChart.cursor = new am4charts.XYCursor();
-
-    legChart.scrollbarX = new am4core.Scrollbar();
-
-    this.legChart = legChart;
+    createLegChart("legdiv", "Van 1 - Session 1", 0);
+    createLegChart("legdiv2", "Van 2 - Session 1", 6);
+    createLegChart("legdiv3", "Van 1 - Session 2", 12);
+    createLegChart("legdiv4", "Van 2 - Session 2", 18);
+    createLegChart("legdiv5", "Van 1 - Session 3", 24);
+    createLegChart("legdiv6", "Van 2 - Session 3", 30);
 
 
     // ----------- RAGNAR RACE CHART -------------
     let ragnarChart = am4core.create("ragnardiv", am4charts.XYChart);
 
     race.push(calculateMapPoints(fullRace))
-    
-    console.log(race[0]);
 
     let ragnarChartTitle = ragnarChart.titles.create();
     ragnarChartTitle.text = "Wasatch Back Full Race";
     ragnarChartTitle.fontSize = 25;
-    ragnarChartTitle.marginBottom = 30;
+    ragnarChartTitle.marginTop = 20
+    ragnarChartTitle.marginBottom = 10;
     ragnarChartTitle.align = "left";
 
     let raceDistanceAxis = ragnarChart.xAxes.push(new am4charts.ValueAxis());
@@ -107,8 +122,9 @@ class App extends Component {
     ragnarData.dataFields.valueY = "elevation"
     ragnarData.strokeWidth = strokeWidth
     ragnarData.name = "Full Race"
-    ragnarData.stroke = am4core.color("#ddd")
+    ragnarData.stroke = am4core.color("#dfdfdf")
     ragnarData.data = race[0];
+    ragnarData.hiddenInLegend = true
     
     ragnarChart.data = race[0];
 
@@ -213,7 +229,6 @@ class App extends Component {
     }
 
     let createRagnarSeries = (seriesData, name, color) => {
-      console.log("seriesDataString: " + seriesData)
       let ragnarSeries = ragnarChart.series.push(new am4charts.LineSeries());
       ragnarSeries.dataFields.valueX = "distance"
       ragnarSeries.dataFields.valueY = "elevation"
@@ -257,8 +272,19 @@ class App extends Component {
   render() {
     return (
       <div>
-        <div id="legdiv" style={{ width: "100%", height: "500px" }}></div>
         <div id="ragnardiv" style={{ width: "100%", height: "500px" }}></div>
+        <hr></hr>
+        <div id="legdiv" style={{ width: "100%", height: "500px" }}></div>
+        <hr></hr>
+        <div id="legdiv2" style={{ width: "100%", height: "500px" }}></div>
+        <hr></hr>
+        <div id="legdiv3" style={{ width: "100%", height: "500px" }}></div>
+        <hr></hr>
+        <div id="legdiv4" style={{ width: "100%", height: "500px" }}></div>
+        <hr></hr>
+        <div id="legdiv5" style={{ width: "100%", height: "500px" }}></div>
+        <hr></hr>
+        <div id="legdiv6" style={{ width: "100%", height: "500px" }}></div>
       </div>
       
     );
